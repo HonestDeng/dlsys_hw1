@@ -178,23 +178,33 @@ def reshape(a, shape):
 
 class BroadcastTo(TensorOp):
     def __init__(self, shape):
-        self.shape = shape
+        self.shape = shape  # 想要广播到目的形状
 
     def compute(self, a):
         return array_api.broadcast_to(a, self.shape)
 
     def gradient(self, out_grad, node):
-        ### BEGIN YOUR SOLUTION
-        lhs = node.inputs[0]
-        sum_axes = []
-        for i in range(len(self.shape)):
-            if i >= len(lhs.shape):
-                sum_axes.append(i)
+        # out_grad是经过维度拓展之后的张量的梯度，也就是b_exp的梯度b_exp_grad
+        # node是张量b_exp，node.inputs[0]就是b。
+        lhs = node.inputs[0]  # 算子的输入，也就是b=[3]
+        origin_shape = lhs.shape  # 原本的形状，也就是b.shape=(1,)
+        target_shape = self.shape  # 想要变换到的形状，也就是b_exp.shape=(1,2)
+        expanded_axes = []  # 记录哪一个维度被拓展了
+        for i in range(-1, -len(target_shape)-1, -1):  # 从尾部开始遍历
+            if i < -len(origin_shape):
+                # origin_shape的长度可能会比target_shape短，
+                # 比如origin_shape=(1,)，target_shape=(1,2)。
+                expanded_axes.append(i+len(target_shape))
                 continue
-            if self.shape[i] != lhs.shape[i]:
-                sum_axes.append(i)
-        return reshape(summation(out_grad, tuple(sum_axes)), lhs.shape)
-        ### END YOUR SOLUTION
+            if target_shape[i] != origin_shape[i]:
+                # 如果目标形状与原本的形状不相同
+                # 那就说明这个维度经过了拓展，需要记录到expanded_axes中
+                expanded_axes.append(i + len(target_shape))
+        # out_grad进行sum运算，运算的轴axes是b_exp相对于b经过拓展的维度
+        res = summation(out_grad, tuple(expanded_axes))
+        # 因为res的形状可能与lhs(也就是b)不相同，所以这里需要reshape到b原本的维度上。
+        res = reshape(res, origin_shape)
+        return res
 
 
 def broadcast_to(a, shape):
