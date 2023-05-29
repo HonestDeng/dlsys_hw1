@@ -398,7 +398,17 @@ def compute_gradient_of_variables(output_tensor, out_grad):
     reverse_topo_order = list(reversed(find_topo_sort([output_tensor])))
 
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    # raise NotImplementedError()
+    for node in reverse_topo_order:
+        node.grad = sum(node_to_output_grads_list[node])
+
+        if node.op == None:
+            continue
+        input_grad = node.op.gradient_as_tuple(node.grad, node)
+        for i in range(len(node.inputs)):
+            if node.inputs[i] not in node_to_output_grads_list:
+                node_to_output_grads_list[node.inputs[i]] = []
+            node_to_output_grads_list[node.inputs[i]].append(input_grad[i])
     ### END YOUR SOLUTION
 
 
@@ -411,14 +421,32 @@ def find_topo_sort(node_list: List[Value]) -> List[Value]:
     sort.
     """
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    # 1. 找出没有输出节点的节点
+    inputs = set()  # 所有充当过输入节点的节点的集合
+    for node in node_list:
+        for input_node in node.inputs:
+            inputs.add(input_node)
+    C = set()  # 没有输出节点的节点的集合
+    for node in node_list:
+        if node not in inputs:
+            C.add(node)
+    res = []
+    visited = set()
+    for node in node_list:
+        if node not in visited:
+            topo_sort_dfs(node, visited, res)
+    return res
     ### END YOUR SOLUTION
 
 
 def topo_sort_dfs(node, visited, topo_order):
     """Post-order DFS"""
     ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
+    visited.add(node)
+    for input_node in node.inputs:
+        if input_node not in visited:
+            topo_sort_dfs(input_node, visited, topo_order)
+    topo_order.append(node)
     ### END YOUR SOLUTION
 
 
