@@ -93,12 +93,13 @@ def nn_epoch(X, y, W1, W2, lr=0.1, batch=100):
             W2: ndl.Tensor[np.float32]
     """
     m, n = X.shape[0], X.shape[1]
+    y_one_hot = np.zeros((y.shape[0], W2.shape[1]))
+    y_one_hot[np.arange(y.size), y] = 1
+    y = y_one_hot
     batch_num = int(np.ceil(m / batch))  # 有多少个batch
     print(m, n, batch_num, batch)
     from time import time
     for i in range(1, batch_num + 1):
-        if i == 100:
-            aaa = 0
         start = time()
         if i != batch_num:
             s_index = (i - 1) * batch
