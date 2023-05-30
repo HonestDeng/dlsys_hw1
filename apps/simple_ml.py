@@ -29,9 +29,20 @@ def parse_mnist(image_filesname, label_filename):
                 labels of the examples.  Values should be of type np.int8 and
                 for MNIST will contain the values 0-9.
     """
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    ### BEGIN YOUR CODE
+    import struct, gzip
+    import numpy as np
+    with gzip.open("./data/train-labels-idx1-ubyte.gz", "rb") as f:
+      magic, num = struct.unpack('<2I', f.read(8))
+      labels = np.frombuffer(f.read(), dtype=np.uint8)
+      # print(labels)
+    with gzip.open("./data/train-images-idx3-ubyte.gz", "rb") as f:
+      magic, img_num, row_num, col_num = struct.unpack('<4I', f.read(16))
+      images = np.frombuffer(f.read(), dtype=np.uint8)
+      images = images.reshape(-1, 28 * 28).astype("float32") / 255.0
+      # print(images)
+    ### END YOUR CODE
+    return images, labels
 
 
 def softmax_loss(Z, y_one_hot):
@@ -50,9 +61,11 @@ def softmax_loss(Z, y_one_hot):
     Returns:
         Average softmax loss over the sample. (ndl.Tensor[np.float32])
     """
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+    batch_size = Z.shape[0]
+    tmp1 = ndl.log(ndl.summation(ndl.exp(Z), axes=(1,)))
+    tmp2 = ndl.summation(ndl.multiply(Z, y_one_hot), axes=(1,))
+    return ndl.summation(tmp1 - tmp2) / batch_size
+    # return np.average(np.log(np.exp(Z).sum(axis=1)) - Z[np.arange(y.shape[0]), y])
 
 
 def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
