@@ -616,17 +616,23 @@ def test_nn_epoch_ndl():
         softmax_loss(ndl.relu(X_@ndl.Tensor(W1_).reshape((5,10)))@W2, y_).numpy())(W1.numpy())
     dW2 = nd.Gradient(lambda W2_ :
         softmax_loss(ndl.relu(X_@W1)@ndl.Tensor(W2_).reshape((10,3)), y_).numpy())(W2.numpy())
-    W1, W2 = nn_epoch(X, y, W1, W2, lr=1.0, batch=50)
+    # 下面这行被注视的代码有个bug，应该把y改成y_one_hot
+    # W1, W2 = nn_epoch(X, y, W1, W2, lr=1.0, batch=50)
+    W1, W2 = nn_epoch(X, y_one_hot, W1, W2, lr=1.0, batch=50)
     np.testing.assert_allclose(dW1.reshape(5,10), W1_0-W1.numpy(), rtol=1e-4, atol=1e-4)
     np.testing.assert_allclose(dW2.reshape(10,3), W2_0-W2.numpy(), rtol=1e-4, atol=1e-4)
 
     # test full epoch
     X,y = parse_mnist("data/train-images-idx3-ubyte.gz",
                       "data/train-labels-idx1-ubyte.gz")
+    y_one_hot = np.zeros((y.shape[0], 10))
+    y_one_hot[np.arange(y.size), y] = 1
     np.random.seed(0)
     W1 = ndl.Tensor(np.random.randn(X.shape[1], 100).astype(np.float32) / np.sqrt(100))
     W2 = ndl.Tensor(np.random.randn(100, 10).astype(np.float32) / np.sqrt(10))
-    W1, W2 = nn_epoch(X, y, W1, W2, lr=0.2, batch=100)
+    # 同样，下面这段代码也有问题
+    # W1, W2 = nn_epoch(X, y, W1, W2, lr=0.2, batch=100)
+    W1, W2 = nn_epoch(X, y_one_hot, W1, W2, lr=0.2, batch=100)
     np.testing.assert_allclose(np.linalg.norm(W1.numpy()), 28.437788,
                                rtol=1e-5, atol=1e-5)
     np.testing.assert_allclose(np.linalg.norm(W2.numpy()), 10.455095,

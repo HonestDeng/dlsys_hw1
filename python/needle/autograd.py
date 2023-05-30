@@ -396,6 +396,7 @@ def compute_gradient_of_variables(output_tensor, out_grad):
 
     # Traverse graph in reverse topological order given the output_node that we are taking gradient wrt.
     reverse_topo_order = list(reversed(find_topo_sort([output_tensor])))
+    print("算子个数", len(reverse_topo_order))
 
     ### BEGIN YOUR SOLUTION
     # raise NotImplementedError()
@@ -420,7 +421,6 @@ def find_topo_sort(node_list: List[Value]) -> List[Value]:
     after all its predecessors are traversed due to post-order DFS, we get a topological
     sort.
     """
-    ### BEGIN YOUR SOLUTION
     # 1. 找出没有输出节点的节点
     inputs = set()  # 所有充当过输入节点的节点的集合
     for node in node_list:
@@ -436,18 +436,15 @@ def find_topo_sort(node_list: List[Value]) -> List[Value]:
         if node not in visited:
             topo_sort_dfs(node, visited, res)
     return res
-    ### END YOUR SOLUTION
 
 
 def topo_sort_dfs(node, visited, topo_order):
     """Post-order DFS"""
-    ### BEGIN YOUR SOLUTION
     visited.add(node)
     for input_node in node.inputs:
         if input_node not in visited:
             topo_sort_dfs(input_node, visited, topo_order)
     topo_order.append(node)
-    ### END YOUR SOLUTION
 
 
 ##############################

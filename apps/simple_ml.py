@@ -3,6 +3,7 @@ import gzip
 import numpy as np
 
 import sys
+
 sys.path.append('python/')
 import needle as ndl
 
@@ -33,14 +34,14 @@ def parse_mnist(image_filesname, label_filename):
     import struct, gzip
     import numpy as np
     with gzip.open("./data/train-labels-idx1-ubyte.gz", "rb") as f:
-      magic, num = struct.unpack('<2I', f.read(8))
-      labels = np.frombuffer(f.read(), dtype=np.uint8)
-      # print(labels)
+        magic, num = struct.unpack('<2I', f.read(8))
+        labels = np.frombuffer(f.read(), dtype=np.uint8)
+        # print(labels)
     with gzip.open("./data/train-images-idx3-ubyte.gz", "rb") as f:
-      magic, img_num, row_num, col_num = struct.unpack('<4I', f.read(16))
-      images = np.frombuffer(f.read(), dtype=np.uint8)
-      images = images.reshape(-1, 28 * 28).astype("float32") / 255.0
-      # print(images)
+        magic, img_num, row_num, col_num = struct.unpack('<4I', f.read(16))
+        images = np.frombuffer(f.read(), dtype=np.uint8)
+        images = images.reshape(-1, 28 * 28).astype("float32") / 255.0
+        # print(images)
     ### END YOUR CODE
     return images, labels
 
@@ -68,7 +69,7 @@ def softmax_loss(Z, y_one_hot):
     # return np.average(np.log(np.exp(Z).sum(axis=1)) - Z[np.arange(y.shape[0]), y])
 
 
-def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
+def nn_epoch(X, y, W1, W2, lr=0.1, batch=100):
     """ Run a single epoch of SGD for a two-layer neural network defined by the
     weights W1 and W2 (with no bias terms):
         logits = ReLU(X * W1) * W1
@@ -91,17 +92,43 @@ def nn_epoch(X, y, W1, W2, lr = 0.1, batch=100):
             W1: ndl.Tensor[np.float32]
             W2: ndl.Tensor[np.float32]
     """
+    m, n = X.shape[0], X.shape[1]
+    batch_num = int(np.ceil(m / batch))  # 有多少个batch
+    print(m, n, batch_num, batch)
+    from time import time
+    for i in range(1, batch_num + 1):
+        if i == 100:
+            aaa = 0
+        start = time()
+        if i != batch_num:
+            s_index = (i - 1) * batch
+            e_index = i * batch
+        else:
+            s_index = (i - 1) * batch
+            e_index = m
+        print("Batch Start:", s_index)
+        X_batch = ndl.Tensor(X[s_index:e_index])
+        y_batch = ndl.Tensor(y[s_index:e_index])
+        z1 = ndl.relu(ndl.matmul(X_batch, W1))
+        z2 = ndl.matmul(z1, W2)
+        loss = softmax_loss(z2, y_batch)
+        end1 = time() - start
+        loss.backward()
 
-    ### BEGIN YOUR SOLUTION
-    raise NotImplementedError()
-    ### END YOUR SOLUTION
+        W1 = W1 - W1.grad * lr
+        W2 = W2 - W2.grad * lr
+        W1 = ndl.Tensor(W1.numpy())
+        W2 = ndl.Tensor(W2.numpy())
+        end2 = time() - start
+        print("时间占比", 1 - end1 / end2)
+    return W1, W2
 
 
 ### CODE BELOW IS FOR ILLUSTRATION, YOU DO NOT NEED TO EDIT
 
-def loss_err(h,y):
+def loss_err(h, y):
     """ Helper function to compute both loss and error"""
     y_one_hot = np.zeros((y.shape[0], h.shape[-1]))
     y_one_hot[np.arange(y.size), y] = 1
     y_ = ndl.Tensor(y_one_hot)
-    return softmax_loss(h,y_).numpy(), np.mean(h.numpy().argmax(axis=1) != y)
+    return softmax_loss(h, y_).numpy(), np.mean(h.numpy().argmax(axis=1) != y)
